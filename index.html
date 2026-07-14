@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Per te</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Intro + countdown */
+    #intro-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      z-index: 3;
+    }
+
+    #countdown {
+      font-size: 8rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    /* Video container */
+    #video-container {
+      position: absolute;
+      inset: 0;
+      display: none;
+      z-index: 2;
+    }
+
+    #main-video {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+    }
+
+    /* Options overlay (after video intro) */
+    #options-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      z-index: 4;
+      background: rgba(0,0,0,0.6);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    #options-title {
+      font-size: 1.6rem;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    .options-buttons {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .option-btn {
+      padding: 1rem 1.8rem;
+      font-size: 1.2rem;
+      border-radius: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .option-btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-si {
+      background: #ff4d79;
+      color: #fff;
+    }
+
+    .btn-no {
+      background: #666;
+      color: #fff;
+    }
+
+    /* Fine risposta SÌ */
+    #si-end {
+      position: absolute;
+      inset: 0;
+      display: none;
+      z-index: 5;
+      background: #000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    #heart-emoji {
+      font-size: 120px;
+      line-height: 1;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(0.9); }
+      50%  { transform: scale(1.1); }
+      100% { transform: scale(0.9); }
+    }
+
+    #si-text {
+      font-size: 1.4rem;
+      text-align: center;
+      color: #fff;
+    }
+
+    /* Fine risposta NO */
+    #no-end {
+      position: absolute;
+      inset: 0;
+      display: none;
+      z-index: 5;
+      background: #000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #no-text {
+      font-size: 1.4rem;
+      text-align: center;
+      color: #fff;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      #countdown {
+        font-size: 5rem;
+      }
+      #options-title {
+        font-size: 1.3rem;
+      }
+      .option-btn {
+        padding: 0.8rem 1.4rem;
+        font-size: 1rem;
+      }
+
+      #heart-emoji {
+        font-size: 80px;
+      }
+
+      #si-text,
+      #no-text {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Countdown screen -->
+    <div id="intro-screen">
+      <div id="countdown">3</div>
+    </div>
+
+    <!-- Main video -->
+    <div id="video-container">
+      <video id="main-video" playsinline></video>
+    </div>
+
+    <!-- Options overlay -->
+    <div id="options-overlay">
+      <div id="options-title">
+        Vuoi stare con me?
+      </div>
+      <div class="options-buttons">
+        <a href="#" id="btn-si" class="option-btn btn-si">Sì</a>
+        <a href="#" id="btn-no" class="option-btn btn-no">No</a>
+      </div>
+    </div>
+
+    <!-- Fine risposta SÌ -->
+    <div id="si-end">
+      <div id="heart-emoji">❤️</div>
+      <div id="si-text">Sì ho troppo tempo libero, però ne è valsa la pena❤️</div>
+    </div>
+
+    <!-- Fine risposta NO -->
+    <div id="no-end">
+      <div id="no-text">almeno ci ho provato...</div>
+    </div>
+  </div>
+
+  <script>
+    const VIDEO_INTRO = "video-intro.mp4";
+    const VIDEO_SI = "video-si.mp4";
+    const VIDEO_NO = "video-no.mp4";
+
+    const introScreen = document.getElementById("intro-screen");
+    const countdownEl = document.getElementById("countdown");
+    const videoContainer = document.getElementById("video-container");
+    const mainVideo = document.getElementById("main-video");
+    const optionsOverlay = document.getElementById("options-overlay");
+    const btnSi = document.getElementById("btn-si");
+    const btnNo = document.getElementById("btn-no");
+
+    // Countdown
+    let count = 3;
+    countdownEl.textContent = count;
+
+    const countInterval = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        countdownEl.textContent = count;
+      } else {
+        clearInterval(countInterval);
+        introScreen.style.display = "none";
+        startIntroVideo();
+      }
+    }, 1000);
+
+    function startIntroVideo() {
+      videoContainer.style.display = "block";
+      mainVideo.src = VIDEO_INTRO;
+      mainVideo.play().catch(err => {
+        console.warn("Autoplay blocked:", err);
+        document.addEventListener("click", () => {
+          mainVideo.play();
+        }, { once: true });
+      });
+
+      mainVideo.onended = () => {
+        videoContainer.style.display = "none";
+        optionsOverlay.style.display = "flex";
+      };
+    }
+
+    function playFinalWithSi() {
+      optionsOverlay.style.display = "none";
+      videoContainer.style.display = "block";
+      mainVideo.src = VIDEO_SI;
+      mainVideo.play();
+
+      mainVideo.onended = () => {
+        videoContainer.style.display = "none";
+        showSiEnd();
+      };
+    }
+
+    function playFinalWithNo() {
+      optionsOverlay.style.display = "none";
+      videoContainer.style.display = "block";
+      mainVideo.src = VIDEO_NO;
+      mainVideo.play();
+
+      mainVideo.onended = () => {
+        videoContainer.style.display = "none";
+        showNoEnd();
+      };
+    }
+
+    btnSi.href = "si";
+    btnNo.href = "no";
+
+    btnSi.addEventListener("click", (e) => {
+      e.preventDefault();
+      playFinalWithSi();
+    });
+
+    btnNo.addEventListener("click", (e) => {
+      e.preventDefault();
+      playFinalWithNo();
+    });
+
+    function showSiEnd() {
+      document.getElementById("si-end").style.display = "flex";
+    }
+
+    function showNoEnd() {
+      document.getElementById("no-end").style.display = "flex";
+    }
+  </script>
+</body>
+</html>
